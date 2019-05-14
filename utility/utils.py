@@ -11,6 +11,7 @@ import time
 import traceback
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from munch import munchify
 
 import requests
 import yaml
@@ -754,3 +755,8 @@ def download_openshift_installer(version=defaults.INSTALLER_VERSION):
         run_cmd(f"tar xzvf {tarball}")
 
     return installer_filename
+
+
+def run_oc_cmd(cmd):
+    out = run_cmd(cmd=cmd)
+    return munchify(yaml.safe_load(out))
