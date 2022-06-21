@@ -25,7 +25,7 @@ class TestRbdBlockPvc(ManageTest):
         self.pvc_obj = pvc_factory(
             interface=constants.CEPHBLOCKPOOL,
             storageclass="encrypted-rbd-test",
-            project="kms-test"
+            project="kms-test",
             size=self.pvc_size,
             access_mode=constants.ACCESS_MODE_RWX,
             status=constants.STATUS_BOUND,
