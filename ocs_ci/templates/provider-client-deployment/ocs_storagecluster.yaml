@@ -8,6 +8,8 @@ spec:
   arbiter: {}
   defaultStorageProfile: ssd-storageprofile
   encryption:
+    enable: true
+    clusterWide: true
     kms: {}
   externalStorage: {}
   flexibleScaling: true
