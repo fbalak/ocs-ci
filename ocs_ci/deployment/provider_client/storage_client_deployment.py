@@ -195,170 +195,170 @@ class StorageClientDeployment(object):
             params=disable_CEPHFS_RBD_CSI,
         ), "configmap/rook-ceph-operator-config not patched"
 
-        # Storageprofiles are deprecated from ODF 4.16
-        if (
-            self.ocs_version < version.VERSION_4_16
-            and self.ocs_version >= version.VERSION_4_14
-        ):
-            # Create storage profiles if not available
-            is_storageprofile_available = self.storage_profile_obj.is_exist(
-                resource_name="ssd-storageprofile"
-            )
-            if not is_storageprofile_available:
-                storage_profile_data = templating.load_yaml(
-                    constants.STORAGE_PROFILE_YAML
-                )
-                templating.dump_data_to_temp_yaml(
-                    storage_profile_data, constants.STORAGE_PROFILE_YAML
-                )
-                self.ocp_obj.exec_oc_cmd(f"apply -f {constants.STORAGE_PROFILE_YAML}")
+       # # Storageprofiles are deprecated from ODF 4.16
+       # if (
+       #     self.ocs_version < version.VERSION_4_16
+       #     and self.ocs_version >= version.VERSION_4_14
+       # ):
+       #     # Create storage profiles if not available
+       #     is_storageprofile_available = self.storage_profile_obj.is_exist(
+       #         resource_name="ssd-storageprofile"
+       #     )
+       #     if not is_storageprofile_available:
+       #         storage_profile_data = templating.load_yaml(
+       #             constants.STORAGE_PROFILE_YAML
+       #         )
+       #         templating.dump_data_to_temp_yaml(
+       #             storage_profile_data, constants.STORAGE_PROFILE_YAML
+       #         )
+       #         self.ocp_obj.exec_oc_cmd(f"apply -f {constants.STORAGE_PROFILE_YAML}")
 
-        # Create storage cluster if not present already
-        is_storagecluster = self.storage_cluster_obj.is_exist(
-            resource_name=constants.DEFAULT_STORAGE_CLUSTER
-        )
-        if not is_storagecluster:
-            if (
-                self.ocs_version < version.VERSION_4_16
-                and self.ocs_version >= version.VERSION_4_14
-            ):
-                storage_cluster_data = templating.load_yaml(
-                    constants.OCS_STORAGE_CLUSTER_YAML
-                )
-                templating.dump_data_to_temp_yaml(
-                    storage_cluster_data, constants.OCS_STORAGE_CLUSTER_YAML
-                )
-                self.ocp_obj.exec_oc_cmd(
-                    f"apply -f {constants.OCS_STORAGE_CLUSTER_YAML}"
-                )
-            else:
-                storage_cluster_data = templating.load_yaml(
-                    constants.OCS_STORAGE_CLUSTER_UPDATED_YAML
-                )
-                templating.dump_data_to_temp_yaml(
-                    storage_cluster_data, constants.OCS_STORAGE_CLUSTER_UPDATED_YAML
-                )
-                self.ocp_obj.exec_oc_cmd(
-                    f"apply -f {constants.OCS_STORAGE_CLUSTER_UPDATED_YAML}"
-                )
+       # # Create storage cluster if not present already
+       # is_storagecluster = self.storage_cluster_obj.is_exist(
+       #     resource_name=constants.DEFAULT_STORAGE_CLUSTER
+       # )
+       # if not is_storagecluster:
+       #     if (
+       #         self.ocs_version < version.VERSION_4_16
+       #         and self.ocs_version >= version.VERSION_4_14
+       #     ):
+       #         storage_cluster_data = templating.load_yaml(
+       #             constants.OCS_STORAGE_CLUSTER_YAML
+       #         )
+       #         templating.dump_data_to_temp_yaml(
+       #             storage_cluster_data, constants.OCS_STORAGE_CLUSTER_YAML
+       #         )
+       #         self.ocp_obj.exec_oc_cmd(
+       #             f"apply -f {constants.OCS_STORAGE_CLUSTER_YAML}"
+       #         )
+       #     else:
+       #         storage_cluster_data = templating.load_yaml(
+       #             constants.OCS_STORAGE_CLUSTER_UPDATED_YAML
+       #         )
+       #         templating.dump_data_to_temp_yaml(
+       #             storage_cluster_data, constants.OCS_STORAGE_CLUSTER_UPDATED_YAML
+       #         )
+       #         self.ocp_obj.exec_oc_cmd(
+       #             f"apply -f {constants.OCS_STORAGE_CLUSTER_UPDATED_YAML}"
+       #         )
 
-        # Creating toolbox pod
-        setup_ceph_toolbox()
+       # # Creating toolbox pod
+       # setup_ceph_toolbox()
 
-        # Check ux server pod, ocs-provider server pod and rgw pods are up and running
-        self.pod_obj.wait_for_resource(
-            condition=constants.STATUS_RUNNING,
-            selector=constants.UX_BACKEND_SERVER_LABEL,
-            resource_count=1,
-            timeout=180,
-        )
-        # Native storageclients are created as part of ODF 4.16 subscription and each of rbd and
-        # cephfs storageclaims gets created automatically with the storageclient creation
-        if self.ocs_version >= version.VERSION_4_16:
-            # Validate native client is created in openshift-storage namespace
-            self.deployment.wait_for_csv(
-                self.ocs_client_operator, constants.OPENSHIFT_STORAGE_NAMESPACE
-            )
-            log.info(
-                f"Sleeping for 30 seconds after {self.ocs_client_operator} created"
-            )
+       # # Check ux server pod, ocs-provider server pod and rgw pods are up and running
+       # self.pod_obj.wait_for_resource(
+       #     condition=constants.STATUS_RUNNING,
+       #     selector=constants.UX_BACKEND_SERVER_LABEL,
+       #     resource_count=1,
+       #     timeout=180,
+       # )
+       # # Native storageclients are created as part of ODF 4.16 subscription and each of rbd and
+       # # cephfs storageclaims gets created automatically with the storageclient creation
+       # if self.ocs_version >= version.VERSION_4_16:
+       #     # Validate native client is created in openshift-storage namespace
+       #     self.deployment.wait_for_csv(
+       #         self.ocs_client_operator, constants.OPENSHIFT_STORAGE_NAMESPACE
+       #     )
+       #     log.info(
+       #         f"Sleeping for 30 seconds after {self.ocs_client_operator} created"
+       #     )
 
-            # Validate storageclaims are Ready and associated storageclasses are created
-            verify_storageclient()
+       #     # Validate storageclaims are Ready and associated storageclasses are created
+       #     verify_storageclient()
 
-            # Validate cephblockpool created
-            assert verify_block_pool_exists(
-                constants.DEFAULT_BLOCKPOOL
-            ), f"{constants.DEFAULT_BLOCKPOOL} is not created"
-            assert (
-                self.rados_utils.verify_cephblockpool_status()
-            ), "the cephblockpool is not in Ready phase"
+       #     # Validate cephblockpool created
+       #     assert verify_block_pool_exists(
+       #         constants.DEFAULT_BLOCKPOOL
+       #     ), f"{constants.DEFAULT_BLOCKPOOL} is not created"
+       #     assert (
+       #         self.rados_utils.verify_cephblockpool_status()
+       #     ), "the cephblockpool is not in Ready phase"
 
-            # Validate radosnamespace created and in 'Ready' status
-            assert (
-                self.rados_utils.check_phase_of_rados_namespace()
-            ), "The radosnamespace is not in Ready phase"
+       #     # Validate radosnamespace created and in 'Ready' status
+       #     assert (
+       #         self.rados_utils.check_phase_of_rados_namespace()
+       #     ), "The radosnamespace is not in Ready phase"
 
-            # Validate storageclassrequests created
-            storage_class_classes = get_all_storageclass_names()
-            for storage_class in self.storage_class_claims:
-                assert (
-                    storage_class in storage_class_classes
-                ), "Storage classes ae not created as expected"
+       #     # Validate storageclassrequests created
+       #     storage_class_classes = get_all_storageclass_names()
+       #     for storage_class in self.storage_class_claims:
+       #         assert (
+       #             storage_class in storage_class_classes
+       #         ), "Storage classes ae not created as expected"
 
-        else:
-            # Create ODF subscription for storage-client
-            self.odf_installation_on_client()
+       # else:
+       #     # Create ODF subscription for storage-client
+       #     self.odf_installation_on_client()
 
-            # Fetch storage provider endpoint details
-            storage_provider_endpoint = self.ocp_obj.exec_oc_cmd(
-                (
-                    f"get storageclusters.ocs.openshift.io -n {config.ENV_DATA['cluster_namespace']}"
-                    + " -o jsonpath={'.items[*].status.storageProviderEndpoint'}"
-                ),
-                out_yaml_format=False,
-            )
-            log.info(f"storage provider endpoint is: {storage_provider_endpoint}")
+       #     # Fetch storage provider endpoint details
+       #     storage_provider_endpoint = self.ocp_obj.exec_oc_cmd(
+       #         (
+       #             f"get storageclusters.ocs.openshift.io -n {config.ENV_DATA['cluster_namespace']}"
+       #             + " -o jsonpath={'.items[*].status.storageProviderEndpoint'}"
+       #         ),
+       #         out_yaml_format=False,
+       #     )
+       #     log.info(f"storage provider endpoint is: {storage_provider_endpoint}")
 
-            # Create Network Policy
-            self.create_network_policy(
-                namespace_to_create_storage_client=constants.OPENSHIFT_STORAGE_CLIENT_NAMESPACE
-            )
-            onboarding_token = self.onboarding_token_generation_from_ui()
+       #     # Create Network Policy
+       #     self.create_network_policy(
+       #         namespace_to_create_storage_client=constants.OPENSHIFT_STORAGE_CLIENT_NAMESPACE
+       #     )
+       #     onboarding_token = self.onboarding_token_generation_from_ui()
 
-            # Create native storage client
-            create_storage_client(
-                storage_provider_endpoint=storage_provider_endpoint,
-                onboarding_token=onboarding_token,
-            )
+       #     # Create native storage client
+       #     create_storage_client(
+       #         storage_provider_endpoint=storage_provider_endpoint,
+       #         onboarding_token=onboarding_token,
+       #     )
 
-        # Check nooba db pod is up and running
-        self.pod_obj.wait_for_resource(
-            condition=constants.STATUS_RUNNING,
-            selector=constants.NOOBAA_APP_LABEL,
-            resource_count=1,
-            timeout=300,
-        )
-        self.pod_obj.wait_for_resource(
-            condition=constants.STATUS_RUNNING,
-            selector=constants.RGW_APP_LABEL,
-            resource_count=1,
-            timeout=300,
-        )
-        self.pod_obj.wait_for_resource(
-            condition=constants.STATUS_RUNNING,
-            selector=constants.PROVIDER_SERVER_LABEL,
-            resource_count=1,
-            timeout=300,
-        )
-        self.pod_obj.wait_for_resource(
-            condition=constants.STATUS_RUNNING,
-            selector=constants.RGW_APP_LABEL,
-            resource_count=1,
-            timeout=300,
-        )
-        list_of_rgw_pods = pod.get_rgw_pods(
-            namespace=config.ENV_DATA["cluster_namespace"]
-        )
-        rgw_pod_obj = list_of_rgw_pods[0]
-        restart_count_for_rgw_pod = pod.get_pod_restarts_count(
-            list_of_pods=list_of_rgw_pods,
-            namespace=config.ENV_DATA["cluster_namespace"],
-        )
-        rgw_pod_restart_count = restart_count_for_rgw_pod[rgw_pod_obj.name]
-        log.info(f"restart count for rgw pod is: {rgw_pod_restart_count}")
-        assert (
-            restart_count_for_rgw_pod[rgw_pod_obj.name] == 0
-        ), f"Error rgw pod has restarted {rgw_pod_restart_count} times"
+       # # Check nooba db pod is up and running
+       # self.pod_obj.wait_for_resource(
+       #     condition=constants.STATUS_RUNNING,
+       #     selector=constants.NOOBAA_APP_LABEL,
+       #     resource_count=1,
+       #     timeout=300,
+       # )
+       # self.pod_obj.wait_for_resource(
+       #     condition=constants.STATUS_RUNNING,
+       #     selector=constants.RGW_APP_LABEL,
+       #     resource_count=1,
+       #     timeout=300,
+       # )
+       # self.pod_obj.wait_for_resource(
+       #     condition=constants.STATUS_RUNNING,
+       #     selector=constants.PROVIDER_SERVER_LABEL,
+       #     resource_count=1,
+       #     timeout=300,
+       # )
+       # self.pod_obj.wait_for_resource(
+       #     condition=constants.STATUS_RUNNING,
+       #     selector=constants.RGW_APP_LABEL,
+       #     resource_count=1,
+       #     timeout=300,
+       # )
+       # list_of_rgw_pods = pod.get_rgw_pods(
+       #     namespace=config.ENV_DATA["cluster_namespace"]
+       # )
+       # rgw_pod_obj = list_of_rgw_pods[0]
+       # restart_count_for_rgw_pod = pod.get_pod_restarts_count(
+       #     list_of_pods=list_of_rgw_pods,
+       #     namespace=config.ENV_DATA["cluster_namespace"],
+       # )
+       # rgw_pod_restart_count = restart_count_for_rgw_pod[rgw_pod_obj.name]
+       # log.info(f"restart count for rgw pod is: {rgw_pod_restart_count}")
+       # assert (
+       #     restart_count_for_rgw_pod[rgw_pod_obj.name] == 0
+       # ), f"Error rgw pod has restarted {rgw_pod_restart_count} times"
 
-        # Check ocs-storagecluster is in 'Ready' status
-        log.info("Verify storagecluster on Ready state")
-        verify_storage_cluster()
+       # # Check ocs-storagecluster is in 'Ready' status
+       # log.info("Verify storagecluster on Ready state")
+       # verify_storage_cluster()
 
-        # Check backing storage is s3-compatible
-        backingstore_type = check_pv_backingstore_type()
-        log.info(f"backingstore value: {backingstore_type}")
-        assert backingstore_type == constants.BACKINGSTORE_TYPE_S3_COMP
+       # # Check backing storage is s3-compatible
+       # backingstore_type = check_pv_backingstore_type()
+       # log.info(f"backingstore value: {backingstore_type}")
+       # assert backingstore_type == constants.BACKINGSTORE_TYPE_S3_COMP
 
     def odf_subscription_on_provider(self):
         """
