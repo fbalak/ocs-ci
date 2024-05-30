@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 @libtest
-def setup_kms():
+def test_setup_kms():
     """
     Test of RHV get_vm_status() method implementation
     VM  of healthy OCS Cluster has 'up' status by default.
