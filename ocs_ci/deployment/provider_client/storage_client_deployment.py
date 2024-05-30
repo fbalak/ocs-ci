@@ -10,7 +10,7 @@ import time
 
 from ocs_ci.framework import config
 from ocs_ci.ocs import constants, ocp, defaults
-from ocs_ci.ocs.rados_utils import RadosHelper
+# from ocs_ci.ocs.rados_utils import RadosHelper
 from ocs_ci.deployment.helpers.lso_helpers import setup_local_storage
 from ocs_ci.ocs.node import label_nodes, get_all_nodes, get_node_objs
 
@@ -91,7 +91,7 @@ class StorageClientDeployment(object):
         ]
         self.ocs_client_operator = defaults.OCS_CLIENT_OPERATOR_NAME
         self.deployment = Deployment()
-        self.rados_utils = RadosHelper()
+        # self.rados_utils = RadosHelper()
 
         # Register a function to be called upon the destruction of the instance
         atexit.register(self.cleanup_function)
